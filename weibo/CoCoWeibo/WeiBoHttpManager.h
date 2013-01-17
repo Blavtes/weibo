@@ -1,0 +1,351 @@
+//
+//  WeiBoHttpManager.h
+//  test
+//
+//  Created by jianting zhu on 11-12-31.
+//  Copyright (c) 2011年 Dunbar Science & Technology. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "ASIHTTPRequestDelegate.h"
+#import "StringUtil.h"
+#import "NSStringAdditions.h"
+#import "POI.h"
+#import "WeiboApiAccount.h"
+#import <CoreLocation/CoreLocation.h>
+
+//新浪
+#define SINA_V2_DOMAIN              @"https://api.weibo.com/2"
+#define SINA_API_AUTHORIZE          @"https://api.weibo.com/oauth2/authorize"
+#define SINA_V2_ACCESS_TOKEN       @"https://api.weibo.com/oauth2/access_token"
+
+#define SINA_USER_STORE_ACCESS_TOKEN     @"SinaAccessToken"
+#define SINA_USER_STORE_EXPIRATION_DATE  @"SinaExpirationDate"
+#define SINA_USER_STORE_USER_ID          @"SinaUserID"
+#define SINA_USER_STORE_USER_NAME        @"SinaUserName"
+
+
+#define USER_INFO_KEY_TYPE          @"requestType"
+#define USER_STORE_ACCESS_TOKEN     @"SinaAccessToken"
+#define USER_STORE_EXPIRATION_DATE  @"SinaExpirationDate"
+#define USER_STORE_USER_ID          @"SinaUserID"
+#define USER_STORE_USER_NAME        @"SinaUserName"
+#define USER_OBJECT                 @"USER_OBJECT"
+#define NeedToReLogin               @"NeedToReLogin"
+#define MMSinaRequestFailed         @"MMSinaRequestFailed"
+
+
+//腾讯
+#define TENCENT_V2_DOMAIN       @"https://open.t.qq.com/api"
+#define TENCENT_V2_AUTHORIZE    @"https://open.t.qq.com/cgi-bin/oauth2/authorize"
+#define TENCENT_V2_ACCESS_TOKEN @"https://open.t.qq.com/cgi-bin/oauth2/access_token"
+
+#define TENCENT_USER_STORE_ACCESS_TOKEN     @"TencentAccessToken"
+#define TENCENT_USER_STORE_EXPIRATION_DATE  @"TencentExpirationDate"
+#define TENCENT_USER_STORE_USER_ID          @"TencentUserID"
+#define TENCENT_USER_STORE_USER_NAME        @"TencentUserName"
+#define TENCENT_USER_STORE_OPENID           @"TencentOpenID"
+#define TENCENT_USER_STORE_OPENKEY          @"TencentOpenKey"
+#define TENCENT_USER_STORE_OAUTH2           @"TencentOAuth2Str"
+
+#define TENCENT_USER_INFO_KEY_TYPE          @"TencentRequestType"
+
+//人人
+#define RENREN_V2_DOMAIN    @""
+#define RENREN_V2_AUTHORIZE @"https://graph.renren.com/oauth/authorize"
+#define RENREN_V2_ACCESS_TOKEN @
+
+
+
+typedef enum {
+    SINA_WEIBO,
+    TENCENT_WEIBO,
+    MAX_WEIBO
+} WeiboType;
+
+
+typedef enum {
+    SinaGetOauthCode = 0,           //authorize_code
+    SinaGetOauthToken,              //access_token
+    SinaGetRefreshToken,            //refresh_token
+    SinaGetPublicTimeline,          //获取最新的公共微博
+    SinaGetUserID,                  //获取登陆用户的UID
+    SinaGetUserInfo,                //获取任意一个用户的信息
+    SinaGetBilateralIdList,         //获取用户双向关注的用户ID列表，即互粉UID列表
+    SinaGetBilateralIdListAll,      
+    SinaGetBilateralUserList,       //获取用户的双向关注user列表，即互粉列表
+    SinaGetBilateralUserListAll,
+    SinaFollowByUserID,             //关注一个用户 by User ID
+    SinaFollowByUserName,           //关注一个用户 by User Name
+    SinaUnfollowByUserID,           //取消关注一个用户 by User ID
+    SinaUnfollowByUserName,         //取消关注一个用户 by User Name
+    SinaGetTrendStatues,            //获取某话题下的微博消息
+    SinaFollowTrend,                //关注某话题
+    SinaUnfollowTrend,              //取消对某话题的关注
+    SinaPostText,                   //发布文字微博
+    SinaPostTextAndImage,           //发布文字图片微博
+    SinaGetHomeLine,                //获取当前登录用户及其所关注用户的最新微博
+    SinaGetComment,                 //根据微博消息ID返回某条微博消息的评论列表
+    SinaGetUserStatus,              //获取某个用户最新发表的微博列表
+    SinaRepost,                     //转发一条微博
+    SinaGetFollowingUserList,       //获取用户的关注列表
+    SinaGetFollowedUserList,        //获取用户粉丝列表
+    SinaGetHotRepostDaily,          //按天返回热门微博转发榜的微博列表
+    SinaGetHotCommentDaily,         //按天返回热门微博评论榜的微博列表
+    SinaGetHotTrendDaily,
+    SinaGetUnreadCount,             //获取某个用户的各种消息未读数
+    SINAGetMetionsStatuses,         //获取最新的提到登录用户的微博列表，即@我的微博
+    SinaGetPois,                    //获取附近地点
+    SinaSearchTopic,                //搜索某一话题下的微博
+    SinaGetUserTopics,              //获取某人的话题列表
+    SinaReplyAComment,              //回复一条评论
+    SinaCommentAStatus,             //对一条微博进行评论
+    
+    TencentGetHomeLine,                //获取当前登录用户及其所关注用户的最新微博
+    TencentPostTextAndImage,           //发布文字图片微博
+    TencentPostText
+}RequestType;
+
+@class ASINetworkQueue;
+@class Status;
+@class User;
+
+
+//Delegate
+@protocol WeiBoHttpDelegate <NSObject>
+
+@optional
+//获取最新的公共微博
+-(void)didGetPublicTimelineWithStatues:(NSArray*)statusArr;
+
+//获取登陆用户的UID
+-(void)didGetUserID:(NSString*)userID;
+
+//获取任意一个用户的信息
+-(void)didGetUserInfo:(User*)user;
+
+//根据微博消息ID返回某条微博消息的评论列表
+-(void)didGetCommentList:(NSDictionary *)commentInfo;
+
+//获取用户双向关注的用户ID列表，即互粉UID列表
+-(void)didGetBilateralIdList:(NSArray*)arr;
+
+//获取用户的双向关注user列表，即互粉列表
+-(void)didGetBilateralUserList:(NSArray*)userArr;
+
+//获取用户的关注列表
+-(void)didGetFollowingUsersList:(NSDictionary*)dic;
+
+//获取用户粉丝列表
+-(void)didGetFollowedUsersList:(NSDictionary*)dic;
+
+//获取某话题下的微博消息
+-(void)didGetTrendStatues:(NSArray*)statusArr;
+
+//关注一个用户 by User ID
+-(void)didFollowByUserIDWithResult:(NSDictionary*)resultDic;
+
+//取消关注一个用户 by User ID
+-(void)didUnfollowByUserIDWithResult:(NSDictionary*)resultDic;
+
+//关注某话题
+-(void)didGetTrendIDAfterFollowed:(int64_t)topicID;
+
+//取消对某话题的关注
+-(void)didGetTrendResultAfterUnfollowed:(BOOL)isTrue;
+
+//发布微博
+-(void)didGetPostResult:(Status*)sts;
+
+//发布腾讯微博
+-(void)didGetTencentPostResult:(Status *)sts;
+
+
+//获取当前登录用户及其所关注用户的最新微博
+-(void)didGetHomeLine:(NSArray*)statusArr;
+
+//获取某个用户最新发表的微博列表
+-(void)didGetUserStatus:(NSArray*)statusArr;
+
+//转发一条微博
+-(void)didRepost:(Status*)sts;
+
+//按天返回热门微博转发榜的微博列表
+-(void)didGetHotRepostDaily:(NSArray*)statusArr;
+
+//按天返回热门微博评论榜的微博列表
+-(void)didGetHotCommentDaily:(NSArray*)statusArr;
+
+//返回最近一天内的热门话题
+-(void)didGetHotTrendDaily:(NSArray*)trendsArr;
+
+//获取某个用户的各种消息未读数
+-(void)didGetUnreadCount:(NSDictionary*)dic;
+
+//获取最新的提到登录用户的微博列表，即@我的微博 
+-(void)didGetMetionsStatused:(NSArray*)statusArr; 
+
+//获取附近地点
+-(void)didgetPois:(NSArray*)poisArr;
+
+//搜索某一话题下的微博
+-(void)didGetTopicSearchResult:(NSArray*)statusArr;
+
+//获取某人的话题列表
+-(void)didGetuserTopics:(NSArray*)trendsArr;
+
+//回复一条评论
+-(void)didReplyAComment:(BOOL)isOK;
+
+//对一条微博进行评论
+-(void)didCommentAStatus:(BOOL)isOK;
+@end
+
+@interface WeiBoHttpManager : NSObject
+{
+    ASINetworkQueue *requestQueue;
+    id<WeiBoHttpDelegate> delegate;
+    
+    NSString *authCode;
+    NSString *authToken;
+    NSString *userId;
+    
+    //Tencent
+//    NSString * openid;
+//    NSString * oauth_consumer_key;
+//    NSString * clientip;
+//    NSString * oauth_version;
+//    NSString * scope;
+}
+
+@property (nonatomic,retain) ASINetworkQueue *requestQueue;
+@property (nonatomic,assign) id<WeiBoHttpDelegate> delegate;
+@property (nonatomic,copy) NSString *authCode;
+@property (nonatomic,copy) NSString *authToken;
+@property (nonatomic,copy) NSString *userId;
+//@property (nonatomic,copy)NSString * openid;
+//@property (nonatomic,copy)NSString * oauth_consumer_key;
+//@property (nonatomic,copy)NSString * clientip;
+//@property (nonatomic,copy)NSString * oauth_version;
+//@property (nonatomic,copy)NSString * scope;
+
+
+- (id)initWithDelegate:(id)theDelegate;
+- (BOOL)isRunning;
+- (void)start;
+- (void)pause;
+- (void)resume;
+- (void)cancel;
+
+- (id)initWithDelegate:(id)theDelegate;
+- (NSURL*)getSinaOAuthCodeUrl;
+- (NSURL*)getTencentOAuthCodeUrl;
+- (NSURL*)getRenrenOAuthCodeUrl;
+- (NSURL*)generateURL:(NSString*)baseURL params:(NSDictionary*)params;
+
+//留给webview用
+-(NSURL*)getOauthCodeUrl;
+
+//temp
+//获取最新的公共微博
+-(void)getPublicTimelineWithCount:(int)count withPage:(int)page;
+
+//获取登陆用户的UID
+-(void)getUserID;
+
+//获取任意一个用户的信息
+-(void)getUserInfoWithUserID:(long long)uid;
+-(void)getUserInfoWithScreenName:(NSString*)sn;
+
+//根据微博消息ID返回某条微博消息的评论列表
+-(void)getCommentListWithID:(long long)weiboID maxID:(NSString*)max_id page:(int)page;
+
+//获取用户双向关注的用户ID列表，即互粉UID列表 
+-(void)getBilateralIdListAll:(long long)uid sort:(int)sort;
+-(void)getBilateralIdList:(long long)uid count:(int)count page:(int)page sort:(int)sort;
+
+//获取用户的关注列表
+-(void)getFollowingUserList:(long long)uid count:(int)count cursor:(int)cursor;
+
+//获取用户粉丝列表
+-(void)getFollowedUserList:(long long)uid count:(int)count cursor:(int)cursor;
+
+//获取用户的双向关注user列表，即互粉列表
+-(void)getBilateralUserList:(long long)uid count:(int)count page:(int)page sort:(int)sort;
+-(void)getBilateralUserListAll:(long long)uid sort:(int)sort;
+
+//关注一个用户 by User ID
+-(void)followByUserID:(long long)uid ;
+//关注一个用户 by User Name
+-(void)followByUserName:(NSString*)userName;
+
+//取消关注一个用户 by User ID
+-(void)unfollowByUserID:(long long)uid ;
+//取消关注一个用户 by User Name
+-(void)unfollowByUserName:(NSString*)userName;
+
+//获取某话题下的微博消息
+-(void)getTrendStatues:(NSString *)trendName;
+
+//关注某话题
+-(void)followTrend:(NSString*)trendName;
+
+//取消对某话题的关注
+-(void)unfollowTrend:(long long)trendID;
+
+//发布文字微博
+-(void)postWithText:(NSString*)text;
+
+//发布文字图片微博
+-(void)postWithText:(NSString *)text image:(UIImage*)image;
+
+//发布文字微博 腾讯
+-(void)postTencentWithText:(NSString*)text;
+
+//发布文字图片微博 腾讯
+-(void)postTencentWithText:(NSString *)text image:(UIImage *)image;
+
+//获取当前登录用户及其所关注用户的最新微博
+-(void)getHomeLine:(int64_t)sinceID maxID:(int64_t)maxID count:(int)count page:(int)page baseApp:(int)baseApp feature:(int)feature;
+
+//Tencent获取当前登录用户及其所关注用户的最新微博
+-(void)getTencentHomeLine:(NSString *)format   pageflag:(int)pageflag pagetime:(int)pagetime  reqnum:(int)reqnum  type:(int)type  contenttype:(int)contenttype oauth_consumer_key:(NSString *)oauth_consumer_key access_token:(NSString *)access_token openid:(NSString *)openid clientip:(NSString *)clientip oauth_version:(NSString *)oauth_version scope:(NSString *)scope;
+
+//获取某个用户最新发表的微博列表
+-(void)getUserStatusUserID:(NSString *) uid sinceID:(int64_t)sinceID maxID:(int64_t)maxID count:(int)count page:(int)page baseApp:(int)baseApp feature:(int)feature;
+
+//转发一条微博
+//isComment(int):是否在转发的同时发表评论，0：否、1：评论给当前微博、2：评论给原微博、3：都评论，默认为0 。
+-(void)repost:(NSString*)weiboID content:(NSString*)content withComment:(int)isComment;
+
+//按天返回热门微博转发榜的微博列表
+-(void)getHotRepostDaily:(int)count;
+
+//按天返回热门微博评论榜的微博列表
+-(void)getHotCommnetDaily:(int)count;
+
+//返回最近一天内的热门话题
+-(void)getHOtTrendsDaily;
+
+//获取某个用户的各种消息未读数
+-(void)getUnreadCount:(NSString*)uid;
+
+//获取最新的提到登录用户的微博列表，即@我的微博
+-(void)getMetionsStatuses;
+
+//获取附近地点
+-(void)getPoisWithCoodinate:(CLLocationCoordinate2D)coodinate queryStr:(NSString*)queryStr;
+
+//搜索某一话题下的微博
+-(void)searchTopic:(NSString *)queryStr count:(int)count page:(int)page;
+
+//获取某人的话题列表
+-(void)getTopicsOfUser:(User*)user;
+
+//回复一条评论
+-(void)replyACommentWeiboId:(NSString *)weiboID commentID:(NSString*)commentID content:(NSString*)content;
+
+//对一条微博进行评论
+-(void)commentAStatus:(NSString*)weiboID content:(NSString*)content;
+
+@end
